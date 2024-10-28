@@ -117,7 +117,7 @@ const Statistics = () => {
     const sortedData = getSortedData();
     const updatedChartData = sortedData.map((item, index) => ({
       name: item.name,
-      population: sortOption === 'salesCount' ? item.count : item.total,
+      population: sortOption === 'salesCount' ? parseInt(item.count) : parseInt(item.total),
       color: d3.schemeCategory10[index % 10], // d3의 색상 팔레트 사용
       legendFontColor: '#7F7F7F',
       legendFontSize: 15,
@@ -184,7 +184,6 @@ const Statistics = () => {
         backgroundColor="transparent"
         paddingLeft="15"
         center={[10, 0]}
-        absolute
       />
 
       <FlatList
