@@ -5,6 +5,8 @@ import OrderManagement from './screens/OrderManagement';
 import Statistics from './screens/Statistics';
 import CouponManagement from './screens/CouponManagement'; // 쿠폰 관리 스크린 임포트
 import Icon from 'react-native-vector-icons/Ionicons'; // 아이콘 라이브러리 임포트
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['2024']); // 경고메시지 제거
 
 const Tab = createBottomTabNavigator();
 
