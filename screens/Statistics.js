@@ -180,7 +180,7 @@ const Statistics = () => {
               onValueChange={handleSortChange}
               style={styles.picker}
             >
-              <Picker.Item label="정렬: 매출 건" value="salesCount" />
+              <Picker.Item label="정렬: 주문 수량" value="salesCount" />
               <Picker.Item label="정렬: 매출액" value="salesValue" />
             </Picker>
           </View>
