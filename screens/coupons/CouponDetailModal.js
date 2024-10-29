@@ -51,6 +51,51 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     const [showEndDatePicker, setShowEndDatePicker] = useState(false);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [action, setAction] = useState(null);
+    const [isError, setIsError] = useState(false);
+
+    const [errors, setErrors] = useState({
+        couponName: '',
+        couponDescription: '',
+        discountValue: '',
+        minOrderValue: '',
+        maxDiscountValue: '',
+    });
+
+    const validateInputs = () => {
+        const newErrors = {
+            couponName: '',
+            couponDescription: '',
+            discountValue: '',
+            minOrderValue: '',
+            maxDiscountValue: '',
+            dateRange: '',
+        };
+
+        if (couponName.length > 20) {
+            newErrors.couponName = '쿠폰 이름은 20자를 초과할 수 없습니다.';
+        }
+        if (couponDescription.length > 100) {
+            newErrors.couponDescription = '쿠폰 설명은 100자를 초과할 수 없습니다.';
+        }
+        if (discountType === '원' && parseInt(discountValue) > 50000) {
+            newErrors.discountValue = '할인 값은 5만원을 넘길 수 없습니다.';
+        }
+        if (discountType === '%' && parseInt(discountValue) > 50) {
+            newErrors.discountValue = '할인 값은 50을 넘길 수 없습니다.';
+        }
+        if (parseInt(minOrderValue) < 0) {
+            newErrors.minOrderValue = '최소 주문 금액은 0보다 작을 수 없습니다.';
+        }
+        if (parseInt(maxDiscountValue) > 50000) {
+            newErrors.maxDiscountValue = '최대 할인 금액은 5만원을 넘길 수 없습니다.';
+        }
+        if (startDate > endDate) {
+            newErrors.dateRange = '시작일이 종료일보다 클 수 없습니다.';
+        }
+
+        setErrors(newErrors);
+        return Object.values(newErrors).every(error => error === '');
+    };
 
     const openConfirmationModal = (type) => {
         setAction(type); // 수정 또는 삭제 작업 설정
@@ -78,6 +123,11 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     };
 
     const handleAddCoupon = async () => {
+        if (!validateInputs()) {
+            setIsError(true); // 입력값이 유효하지 않으면 에러 상태 설정
+            return; // 유효하지 않으면 함수 종료
+        }
+
         const couponRef = doc(collection(firestore, 'coupon')); // 새로운 문서 참조 생성
         try {
             await setDoc(couponRef, {
@@ -98,11 +148,15 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     };
 
     const handleUpdateCoupon = async () => {
+        if (!validateInputs()) {
+            return; // 입력값이 유효하지 않으면 함수 종료
+        }
+
         const couponRef = doc(firestore, 'coupon', coupon.id);
         try {
             await updateDoc(couponRef, {
-                name: couponName, // 수정된 쿠폰 이름 반영
-                description: couponDescription, // 수정된 쿠폰 설명 반영
+                name: couponName,
+                description: couponDescription,
                 startDate: `${startDate.getFullYear().toString().slice(-2)}${(startDate.getMonth() + 1).toString().padStart(2, '0')}${startDate.getDate().toString().padStart(2, '0')}`,
                 endDate: `${endDate.getFullYear().toString().slice(-2)}${(endDate.getMonth() + 1).toString().padStart(2, '0')}${endDate.getDate().toString().padStart(2, '0')}`,
                 discountValue: parseInt(discountValue),
@@ -127,6 +181,26 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         }
     };
 
+    const handleConfirmAction = async () => {
+        // 입력값 유효성 검사
+        if (!validateInputs()) {
+            setIsError(true); // 에러가 있을 경우 상태를 true로 설정
+            return; // 유효하지 않으면 함수 종료
+        }
+
+        // 유효한 경우 추가, 수정, 삭제 처리
+        if (action === 'update') {
+            await handleUpdateCoupon();
+        } else if (action === 'delete') {
+            await handleDeleteCoupon();
+        } else if (action === 'add') {
+            await handleAddCoupon();
+        }
+
+        // 작업이 성공적으로 완료된 경우 모달 닫기
+        onClose();
+    };
+
     return (
         <Modal
             animationType="slide"
@@ -140,7 +214,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
             >
                 <ScrollView contentContainerStyle={styles.scrollViewContent}>
                     <View style={styles.modalInputContainer}>
-                        <Text style={styles.label}>쿠폰 이름</Text>
+                        <Text style={errors.couponName ? styles.errorLabel : styles.label}>
+                            {errors.couponName || '쿠폰 이름'}
+                        </Text>
                         <TextInput
                             style={styles.input}
                             placeholder="쿠폰 이름"
@@ -148,7 +224,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             onChangeText={setCouponName}
                         />
 
-                        <Text style={styles.label}>쿠폰 설명</Text>
+                        <Text style={errors.couponDescription ? styles.errorLabel : styles.label}>
+                            {errors.couponDescription || '쿠폰 설명'}
+                        </Text>
                         <TextInput
                             style={styles.input}
                             placeholder="쿠폰 설명"
@@ -158,7 +236,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
 
                         <View style={styles.separator} />
 
-                        <Text style={styles.label}>할인 값 설정</Text>
+                        <Text style={errors.discountValue ? styles.errorLabel : styles.label}>
+                            {errors.discountValue || '할인 값 설정'}
+                        </Text>
                         <View style={styles.discountTypeContainer}>
                             <TextInput
                                 style={styles.discountInput}
@@ -197,7 +277,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             </View>
                         </View>
 
-                        <Text style={styles.label}>최소 주문 금액</Text>
+                        <Text style={errors.minOrderValue ? styles.errorLabel : styles.label}>
+                            {errors.minOrderValue || '최소 주문 금액'}
+                        </Text>
                         <TextInput
                             style={styles.input}
                             placeholder="금액 입력"
@@ -206,7 +288,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             onChangeText={setMinOrderValue}
                         />
 
-                        <Text style={styles.label}>최대 할인 금액</Text>
+                        <Text style={errors.maxDiscountValue ? styles.errorLabel : styles.label}>
+                            {errors.maxDiscountValue || '최대 할인 금액'}
+                        </Text>
                         <TextInput
                             style={styles.input}
                             placeholder="금액 입력"
@@ -215,7 +299,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             onChangeText={setMaxDiscountValue}
                         />
 
-                        <Text style={styles.label}>기간 설정</Text>
+                        <Text style={errors.dateRange ? styles.errorLabel : styles.label}>
+                            {errors.dateRange || '기간 설정'}
+                        </Text>
                         <View style={styles.datePickerContainer}>
                             <TouchableOpacity onPress={() => setShowStartDatePicker(true)} style={styles.dateInputContainer}>
                                 <View style={styles.dateInputWrapper}>
@@ -321,7 +407,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             </>
                         ) : ( // 쿠폰이 없는 경우 추가 버튼 표시
                             <View style={styles.buttonHalf}>
-                                <Button title="추가" onPress={handleAddCoupon} />
+                                <Button title="추가" onPress={() => openConfirmationModal('add')} />
                             </View>
                         )}
                     </View>
@@ -329,11 +415,22 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                     {showConfirmationModal && (
                         <ConfirmationModal
                             visible={showConfirmationModal}
-                            message={`이 쿠폰을 ${action === 'update' ? '수정' : '삭제'}하시겠습니까?`}
-                            onConfirm={action === 'update' ? handleUpdateCoupon : handleDeleteCoupon} // 동적으로 호출
-                            onClose={() => setShowConfirmationModal(false)} // 모달 닫기
+                            message={isError
+                                ? "잘못된 입력값이 있습니다"
+                                : action === 'add'
+                                    ? "이 쿠폰을 추가하시겠습니까?"
+                                    : action === 'update'
+                                        ? "이 쿠폰을 수정하시겠습니까?"
+                                        : "이 쿠폰을 삭제하시겠습니까?"}
+                            onConfirm={handleConfirmAction} // 동적으로 호출
+                            onClose={() => {
+                                setShowConfirmationModal(false);
+                                setIsError(false); // 모달이 닫힐 때 에러 상태 초기화
+                            }}
+                            isError={isError} // 에러 상태 전달
                         />
                     )}
+
                 </ScrollView>
             </KeyboardAvoidingView>
         </Modal >

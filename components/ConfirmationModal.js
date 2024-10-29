@@ -1,4 +1,3 @@
-// ConfirmationModal.js
 import React from 'react';
 import { View, Modal, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import styled from 'styled-components/native';
@@ -19,25 +18,33 @@ const ModalContent = styled.View`
   align-items: center;
 `;
 
-const ConfirmationModal = ({ visible, message, onConfirm, onClose }) => {
+const ConfirmationModal = ({ visible, message, onConfirm, onClose, isError }) => {
     return (
         <Modal transparent visible={visible} animationType="slide">
             <ModalContainer>
                 <ModalContent>
                     <Icon
-                        name="warning"
+                        name={isError ? "error" : "warning"}
                         size={40}
-                        color="red"
+                        color={isError ? "red" : "orange"}
                         style={{ marginBottom: 10 }}
                     />
                     <Text style={styles.errorText}>{message}</Text>
                     <View style={styles.buttonContainer}>
-                        <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
-                            <Text style={styles.buttonText}>취소</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity onPress={onConfirm} style={styles.confirmButton}>
-                            <Text style={styles.buttonText}>확인</Text>
-                        </TouchableOpacity>
+                        {isError ? (
+                            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                                <Text style={styles.buttonText}>닫기</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <>
+                                <TouchableOpacity onPress={onClose} style={styles.cancelButton}>
+                                    <Text style={styles.buttonText}>취소</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={onConfirm} style={styles.confirmButton}>
+                                    <Text style={styles.buttonText}>확인</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
                 </ModalContent>
             </ModalContainer>
@@ -69,8 +76,14 @@ const styles = StyleSheet.create({
         borderColor: 'gray',
         marginRight: 10,
     },
+    closeButton: {
+        padding: 10,
+        borderWidth: 1,
+        borderRadius: 5,
+        borderColor: 'gray',
+    },
     buttonText: {
-        color: 'black', // 버튼 텍스트 흰색
+        color: 'black', // 버튼 텍스트 색상
         fontSize: 16,
     },
 });

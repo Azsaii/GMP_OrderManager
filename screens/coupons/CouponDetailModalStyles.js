@@ -124,6 +124,11 @@ const styles = StyleSheet.create({
         fontWeight: 'bold', // 항목 이름을 강조
         color: '#333',
     },
+    errorLabel: {
+        marginBottom: 5, // 항목 이름과 입력 필드 사이의 간격 조정
+        fontWeight: 'bold', // 항목 이름을 강조
+        color: 'red',
+    },
     rowContainer: {
         flexDirection: 'column',
         alignItems: 'center',
