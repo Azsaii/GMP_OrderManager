@@ -135,6 +135,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                 description: couponDescription,
                 startDate: `${startDate.getFullYear().toString().slice(-2)}${(startDate.getMonth() + 1).toString().padStart(2, '0')}${startDate.getDate().toString().padStart(2, '0')}`,
                 endDate: `${endDate.getFullYear().toString().slice(-2)}${(endDate.getMonth() + 1).toString().padStart(2, '0')}${endDate.getDate().toString().padStart(2, '0')}`,
+                discountType: discountType,
                 discountValue: parseInt(discountValue),
                 minOrderValue: parseInt(minOrderValue),
                 maxDiscountValue: parseInt(maxDiscountValue),
