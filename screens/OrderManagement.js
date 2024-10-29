@@ -234,6 +234,8 @@ const OrderManagement = () => {
 
       {isLoading ? ( // 로딩 상태에 따라 표시
         <ActivityIndicator size="large" color="#0000ff" style={styles.loader} />
+      ) : orders.length === 0 ? ( // 주문이 없는 경우
+        <Text style={styles.noOrdersText}>주문 내역이 없습니다</Text>
       ) : (
         <FlatList
           data={orders} // 주문 데이터
@@ -317,6 +319,12 @@ const styles = StyleSheet.create({
   loader: {
     alignSelf: 'center',
     marginTop: '40%', // 로딩 인디케이터 위치
+  },
+  noOrdersText: {
+    fontSize: 18,
+    color: '#999',
+    textAlign: 'center',
+    marginTop: '40%',
   },
 });
 
