@@ -33,8 +33,13 @@ const styles = StyleSheet.create({
     modalInputContainer: {
         marginBottom: 20,
     },
+    discountTypeContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%'
+    },
     discountInput: {
-        flex: 1,
+        flex: 0.4,
         borderWidth: 1,
         borderColor: '#ced4da',
         borderRadius: 8,
@@ -43,14 +48,14 @@ const styles = StyleSheet.create({
         marginRight: 10,
         height: 50,
     },
-    discountTypeContainer: {
+    discountTypeButtonContainer: {
+        flex: 0.6, // 버튼이 화면의 절반을 차지하도록 설정
         flexDirection: 'row',
-        alignItems: 'center',
+        marginBottom: 10,
     },
     radioContainer: {
         flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        justifyContent: 'flex-end',
         marginBottom: 10,
     },
     radioButton: {
@@ -118,6 +123,12 @@ const styles = StyleSheet.create({
         marginBottom: 5, // 항목 이름과 입력 필드 사이의 간격 조정
         fontWeight: 'bold', // 항목 이름을 강조
         color: '#333',
+    },
+    rowContainer: {
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'space-between', // 문구와 버튼의 공간을 분배
+        marginBottom: 10, // 각 항목 간의 간격
     },
 });
 

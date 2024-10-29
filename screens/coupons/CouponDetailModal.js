@@ -14,7 +14,7 @@ import {
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { firestore } from '../../firebaseConfig';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, setDoc, collection } from 'firebase/firestore';
 import ConfirmationModal from '../../components/ConfirmationModal';
 import styles from './CouponDetailModalStyles';
 
@@ -27,7 +27,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         return new Date(year, month, day);
     };
 
-    // 상태 초기화 수정
+    // 상태 초기화
     const [startDate, setStartDate] = useState(() => {
         return coupon ? parseDateString(coupon.startDate) : new Date(); // 쿠폰이 없으면 현재 날짜
     });
@@ -42,6 +42,10 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     const [discountType, setDiscountType] = useState(coupon ? coupon.discountType : "원"); // 할인 타입 초기화
     const [minOrderValue, setMinOrderValue] = useState(coupon ? coupon.minOrderValue.toString() : ''); // 최소 주문 금액 초기화
     const [maxDiscountValue, setMaxDiscountValue] = useState(coupon ? coupon.maxDiscountValue.toString() : ''); // 최대 할인 금액 초기화
+
+    // 추가 필드 상태
+    const [canBeCombined, setCanBeCombined] = useState(coupon ? coupon.canBeCombined : true); // 기본값 true
+    const [available, setAvailable] = useState(coupon ? coupon.available : true); // 기본값 true
 
     const [showStartDatePicker, setShowStartDatePicker] = useState(false);
     const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -84,6 +88,8 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                 discountValue: parseInt(discountValue),
                 minOrderValue: parseInt(minOrderValue),
                 maxDiscountValue: parseInt(maxDiscountValue),
+                canBeCombined: canBeCombined,
+                available: available,
             });
             onClose(); // 추가 후 모달 닫기
         } catch (error) {
@@ -102,6 +108,8 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                 discountValue: parseInt(discountValue),
                 minOrderValue: parseInt(minOrderValue),
                 maxDiscountValue: parseInt(maxDiscountValue),
+                canBeCombined: canBeCombined,
+                available: available,
             });
             onClose(); // 수정 후 모달 닫기
         } catch (error) {
@@ -128,7 +136,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         >
             <KeyboardAvoidingView
                 style={styles.modalContainer}
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'} // 플랫폼에 따라 동작 설정
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
                 <ScrollView contentContainerStyle={styles.scrollViewContent}>
                     <View style={styles.modalInputContainer}>
@@ -136,16 +144,16 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                         <TextInput
                             style={styles.input}
                             placeholder="쿠폰 이름"
-                            value={couponName} // 쿠폰 이름 상태 사용
-                            onChangeText={setCouponName} // 쿠폰 이름 수정 시 상태 업데이트
+                            value={couponName}
+                            onChangeText={setCouponName}
                         />
 
                         <Text style={styles.label}>쿠폰 설명</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="쿠폰 설명"
-                            value={couponDescription} // 쿠폰 설명 상태 사용
-                            onChangeText={setCouponDescription} // 쿠폰 설명 수정 시 상태 업데이트
+                            value={couponDescription}
+                            onChangeText={setCouponDescription}
                         />
 
                         <View style={styles.separator} />
@@ -156,16 +164,17 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                                 style={styles.discountInput}
                                 placeholder="할인 값 설정"
                                 keyboardType="numeric"
-                                value={discountValue} // defaultValue에서 value로 변경
-                                onChangeText={setDiscountValue} // 입력 시 상태 업데이트
+                                value={discountValue}
+                                onChangeText={setDiscountValue}
                             />
-                            <View style={styles.radioContainer}>
+                            <View style={styles.discountTypeButtonContainer}>
                                 <TouchableOpacity
                                     onPress={() => setDiscountType('원')}
                                     style={[
                                         styles.radioButton,
                                         discountType !== '원' && styles.inactiveRadio,
                                         discountType === '원' && styles.activeRadio,
+                                        { flex: 1 }, // 버튼 너비를 동일하게 설정
                                     ]}
                                 >
                                     <Text style={discountType === '원' ? styles.selectedRadio : styles.radio}>
@@ -178,6 +187,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                                         styles.radioButton,
                                         discountType !== '%' && styles.inactiveRadio,
                                         discountType === '%' && styles.activeRadio,
+                                        { flex: 1 }, // 버튼 너비를 동일하게 설정
                                     ]}
                                 >
                                     <Text style={discountType === '%' ? styles.selectedRadio : styles.radio}>
@@ -186,13 +196,14 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                                 </TouchableOpacity>
                             </View>
                         </View>
+
                         <Text style={styles.label}>최소 주문 금액</Text>
                         <TextInput
                             style={styles.input}
                             placeholder="금액 입력"
                             keyboardType="numeric"
-                            value={minOrderValue} // defaultValue에서 value로 변경
-                            onChangeText={setMinOrderValue} // 입력 시 상태 업데이트
+                            value={minOrderValue}
+                            onChangeText={setMinOrderValue}
                         />
 
                         <Text style={styles.label}>최대 할인 금액</Text>
@@ -200,8 +211,8 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             style={styles.input}
                             placeholder="금액 입력"
                             keyboardType="numeric"
-                            value={maxDiscountValue} // defaultValue에서 value로 변경
-                            onChangeText={setMaxDiscountValue} // 입력 시 상태 업데이트
+                            value={maxDiscountValue}
+                            onChangeText={setMaxDiscountValue}
                         />
 
                         <Text style={styles.label}>기간 설정</Text>
@@ -236,6 +247,68 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                             />
                         )}
                     </View>
+
+                    {/* 구분선 추가 */}
+                    <View style={styles.separator} />
+
+                    {/* canBeCombined 필드 추가 */}
+                    <View style={styles.rowContainer}>
+                        <Text style={styles.label}>다른 쿠폰과 함께 사용 가능</Text>
+                        <View style={styles.radioContainer}>
+                            <TouchableOpacity
+                                onPress={() => setCanBeCombined(true)}
+                                style={[
+                                    styles.radioButton,
+                                    canBeCombined && styles.activeRadio,
+                                    !canBeCombined && styles.inactiveRadio,
+                                    { flex: 0.3 }, // 너비를 동일하게 설정
+                                ]}
+                            >
+                                <Text style={canBeCombined ? styles.selectedRadio : styles.radio}>가능</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setCanBeCombined(false)}
+                                style={[
+                                    styles.radioButton,
+                                    !canBeCombined && styles.activeRadio,
+                                    canBeCombined && styles.inactiveRadio,
+                                    { flex: 0.3 }, // 너비를 동일하게 설정
+                                ]}
+                            >
+                                <Text style={!canBeCombined ? styles.selectedRadio : styles.radio}>불가능</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    {/* available 필드 추가 */}
+                    <View style={styles.rowContainer}>
+                        <Text style={styles.label}>쿠폰 활성화</Text>
+                        <View style={styles.radioContainer}>
+                            <TouchableOpacity
+                                onPress={() => setAvailable(true)}
+                                style={[
+                                    styles.radioButton,
+                                    available && styles.activeRadio,
+                                    !available && styles.inactiveRadio,
+                                    { flex: 0.3 }, // 너비를 동일하게 설정
+                                ]}
+                            >
+                                <Text style={available ? styles.selectedRadio : styles.radio}>활성</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setAvailable(false)}
+                                style={[
+                                    styles.radioButton,
+                                    !available && styles.activeRadio,
+                                    available && styles.inactiveRadio,
+                                    { flex: 0.3 }, // 너비를 동일하게 설정
+                                ]}
+                            >
+                                <Text style={!available ? styles.selectedRadio : styles.radio}>비활성</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
                     <View style={styles.buttonContainer}>
                         {coupon ? ( // 쿠폰이 있는 경우 수정/삭제 버튼 표시
                             <>
@@ -263,7 +336,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                     )}
                 </ScrollView>
             </KeyboardAvoidingView>
-        </Modal>
+        </Modal >
     );
 };
 
