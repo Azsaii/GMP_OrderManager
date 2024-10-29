@@ -126,7 +126,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     detailsButton: {
-        color: '#007BFF',
+        backgroundColor: 'black',
+        color: 'white',
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 5,
     },
     addButton: {
         flexDirection: 'row',

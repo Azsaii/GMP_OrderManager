@@ -335,10 +335,8 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                         )}
                     </View>
 
-                    {/* 구분선 추가 */}
                     <View style={styles.separator} />
 
-                    {/* canBeCombined 필드 추가 */}
                     <View style={styles.rowContainer}>
                         <Text style={styles.label}>다른 쿠폰과 함께 사용 가능</Text>
                         <View style={styles.radioContainer}>
@@ -367,7 +365,6 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                         </View>
                     </View>
 
-                    {/* available 필드 추가 */}
                     <View style={styles.rowContainer}>
                         <Text style={styles.label}>쿠폰 활성화</Text>
                         <View style={styles.radioContainer}>
