@@ -289,7 +289,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center', // 아이콘 세로 중앙 정렬
   },
   pickerContainer: {
-    height: 50,
+    height: 52,
     width: '48%', // 픽커 너비
     backgroundColor: '#ffffff',
     borderWidth: 1,
