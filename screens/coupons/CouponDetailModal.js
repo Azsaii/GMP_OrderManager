@@ -13,39 +13,40 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { firestore } from '../firebaseConfig';
+import { firestore } from '../../firebaseConfig';
 import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
-import ConfirmationModal from '../components/ConfirmationModal';
+import ConfirmationModal from '../../components/ConfirmationModal';
+import styles from './CouponDetailModalStyles';
 
 const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
-    const [startDate, setStartDate] = useState(() => {
-        const startDateString = coupon.startDate; // '241029' 형식
-        const year = parseInt(startDateString.slice(0, 2), 10) + 2000; // YY -> YYYY 변환
-        const month = parseInt(startDateString.slice(2, 4), 10) - 1; // 0 기준으로 조정
-        const day = parseInt(startDateString.slice(4, 6), 10);
+    // 날짜 문자열을 Date 객체로 변환하는 함수
+    const parseDateString = (dateString) => {
+        const year = parseInt(dateString.slice(0, 2), 10) + 2000;
+        const month = parseInt(dateString.slice(2, 4), 10) - 1;
+        const day = parseInt(dateString.slice(4, 6), 10);
         return new Date(year, month, day);
+    };
+
+    // 상태 초기화 수정
+    const [startDate, setStartDate] = useState(() => {
+        return coupon ? parseDateString(coupon.startDate) : new Date(); // 쿠폰이 없으면 현재 날짜
     });
 
     const [endDate, setEndDate] = useState(() => {
-        const endDateString = coupon.endDate; // '241029' 형식
-        const year = parseInt(endDateString.slice(0, 2), 10) + 2000; // YY -> YYYY 변환
-        const month = parseInt(endDateString.slice(2, 4), 10) - 1; // 0 기준으로 조정
-        const day = parseInt(endDateString.slice(4, 6), 10);
-        return new Date(year, month, day);
+        return coupon ? parseDateString(coupon.endDate) : new Date(); // 쿠폰이 없으면 현재 날짜
     });
 
-    const [couponName, setCouponName] = useState(coupon.name); // 쿠폰 이름 초기화
-    const [couponDescription, setCouponDescription] = useState(coupon.description); // 쿠폰 설명 초기화
-    const [discountValue, setDiscountValue] = useState(coupon.discountValue.toString()); // 할인 값 초기화
-    const [discountType, setDiscountType] = useState(coupon.discountType || '원'); // 할인 타입 초기화
-    const [minOrderValue, setMinOrderValue] = useState(coupon.minOrderValue.toString()); // 최소 주문 금액 초기화
-    const [maxDiscountValue, setMaxDiscountValue] = useState(coupon.maxDiscountValue.toString()); // 최대 할인 금액 초기화
+    const [couponName, setCouponName] = useState(coupon ? coupon.name : ''); // 쿠폰 이름 초기화
+    const [couponDescription, setCouponDescription] = useState(coupon ? coupon.description : ''); // 쿠폰 설명 초기화
+    const [discountValue, setDiscountValue] = useState(coupon ? coupon.discountValue.toString() : ''); // 할인 값 초기화
+    const [discountType, setDiscountType] = useState(coupon ? coupon.discountType : "원"); // 할인 타입 초기화
+    const [minOrderValue, setMinOrderValue] = useState(coupon ? coupon.minOrderValue.toString() : ''); // 최소 주문 금액 초기화
+    const [maxDiscountValue, setMaxDiscountValue] = useState(coupon ? coupon.maxDiscountValue.toString() : ''); // 최대 할인 금액 초기화
+
     const [showStartDatePicker, setShowStartDatePicker] = useState(false);
     const [showEndDatePicker, setShowEndDatePicker] = useState(false);
     const [showConfirmationModal, setShowConfirmationModal] = useState(false);
     const [action, setAction] = useState(null);
-
-    if (!coupon) return null;
 
     const openConfirmationModal = (type) => {
         setAction(type); // 수정 또는 삭제 작업 설정
@@ -70,6 +71,24 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
         return `${year}.${month}.${day}`;
+    };
+
+    const handleAddCoupon = async () => {
+        const couponRef = doc(collection(firestore, 'coupon')); // 새로운 문서 참조 생성
+        try {
+            await setDoc(couponRef, {
+                name: couponName,
+                description: couponDescription,
+                startDate: `${startDate.getFullYear().toString().slice(-2)}${(startDate.getMonth() + 1).toString().padStart(2, '0')}${startDate.getDate().toString().padStart(2, '0')}`,
+                endDate: `${endDate.getFullYear().toString().slice(-2)}${(endDate.getMonth() + 1).toString().padStart(2, '0')}${endDate.getDate().toString().padStart(2, '0')}`,
+                discountValue: parseInt(discountValue),
+                minOrderValue: parseInt(minOrderValue),
+                maxDiscountValue: parseInt(maxDiscountValue),
+            });
+            onClose(); // 추가 후 모달 닫기
+        } catch (error) {
+            console.error('쿠폰 추가 중 오류 발생:', error);
+        }
     };
 
     const handleUpdateCoupon = async () => {
@@ -218,12 +237,20 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                         )}
                     </View>
                     <View style={styles.buttonContainer}>
-                        <View style={styles.buttonHalf}>
-                            <Button title="수정" onPress={() => openConfirmationModal('update')} />
-                        </View>
-                        <View style={styles.buttonHalf}>
-                            <Button title="삭제" color="red" onPress={() => openConfirmationModal('delete')} />
-                        </View>
+                        {coupon ? ( // 쿠폰이 있는 경우 수정/삭제 버튼 표시
+                            <>
+                                <View style={styles.buttonHalf}>
+                                    <Button title="수정" onPress={() => openConfirmationModal('update')} />
+                                </View>
+                                <View style={styles.buttonHalf}>
+                                    <Button title="삭제" color="red" onPress={() => openConfirmationModal('delete')} />
+                                </View>
+                            </>
+                        ) : ( // 쿠폰이 없는 경우 추가 버튼 표시
+                            <View style={styles.buttonHalf}>
+                                <Button title="추가" onPress={handleAddCoupon} />
+                            </View>
+                        )}
                     </View>
 
                     {showConfirmationModal && (
@@ -239,125 +266,5 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         </Modal>
     );
 };
-
-const styles = StyleSheet.create({
-    modalContainer: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-    },
-    couponInfoContainer: {
-        backgroundColor: '#f5f5f5',
-        borderWidth: 1,
-        borderColor: '#ced4da',
-        borderRadius: 8,
-        padding: 15,
-        marginBottom: 10,
-    },
-    modalHeader: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        marginBottom: 5,
-    },
-    modalDetail: {
-        marginBottom: 10,
-        color: '#333',
-    },
-    separator: {
-        height: 1,
-        backgroundColor: '#ced4da',
-        marginVertical: 10,
-    },
-    modalInputContainer: {
-        marginBottom: 20,
-    },
-    discountInput: {
-        flex: 1,
-        borderWidth: 1,
-        borderColor: '#ced4da',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 10,
-        marginRight: 10,
-        height: 50,
-    },
-    discountTypeContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    radioContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 10,
-    },
-    radioButton: {
-        marginHorizontal: 10,
-        padding: 10,
-        borderWidth: 1,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: 50,
-    },
-    inactiveRadio: {
-        backgroundColor: '#d3d3d3',
-        borderColor: '#ced4da',
-    },
-    activeRadio: {
-        borderColor: '#007BFF',
-    },
-    radio: {
-        color: 'black',
-    },
-    selectedRadio: {
-        fontWeight: 'bold',
-        color: '#007BFF',
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: '#ced4da',
-        borderRadius: 8,
-        padding: 10,
-        marginBottom: 10,
-    },
-    datePickerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    dateInputContainer: {
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    dateInputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ced4da',
-        borderRadius: 8,
-        paddingRight: 15,
-        height: 50,
-        justifyContent: 'space-between',
-    },
-    dateText: {
-        flex: 1,
-        textAlign: 'center',
-        color: '#333',
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    buttonHalf: {
-        flex: 1,
-        marginHorizontal: 5,
-    },
-    label: {
-        marginBottom: 5, // 항목 이름과 입력 필드 사이의 간격 조정
-        fontWeight: 'bold', // 항목 이름을 강조
-        color: '#333',
-    },
-});
 
 export default CouponDetailModal;

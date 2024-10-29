@@ -1,3 +1,4 @@
+// CouponManagement.js
 import React, { useEffect, useState } from 'react';
 import {
     View,
@@ -7,7 +8,7 @@ import {
     StyleSheet,
     ActivityIndicator,
 } from 'react-native';
-import { firestore } from '../firebaseConfig';
+import { firestore } from '../../firebaseConfig';
 import { collection, getDocs } from 'firebase/firestore';
 import Icon from 'react-native-vector-icons/Ionicons';
 import CouponDetailModal from './CouponDetailModal';
@@ -43,10 +44,15 @@ const CouponManagement = () => {
         setModalVisible(true);
     };
 
+    const openAddModal = () => {
+        setSelectedCoupon(null); // 쿠폰 작성 시 선택된 쿠폰을 null로 설정
+        setModalVisible(true); // 모달 열기
+    };
+
     const closeModal = () => {
         setModalVisible(false);
         setSelectedCoupon(null);
-        fetchCoupons();
+        fetchCoupons(); // 쿠폰 목록 갱신
     };
 
     const renderCouponItem = ({ item }) => (
@@ -71,18 +77,18 @@ const CouponManagement = () => {
                         renderItem={renderCouponItem}
                         contentContainerStyle={styles.list}
                     />
-                    <TouchableOpacity style={styles.addButton} onPress={() => console.log('쿠폰 작성')}>
+                    <TouchableOpacity style={styles.addButton} onPress={openAddModal}>
                         <Icon name="add" size={24} color="#fff" />
                         <Text style={styles.addButtonText}>쿠폰 작성</Text>
                     </TouchableOpacity>
                 </>
             )}
 
-            {selectedCoupon && ( // 쿠폰이 선택된 경우에만 모달을 렌더링
+            {modalVisible && ( // 모달이 열려있는 경우에만 렌더링
                 <CouponDetailModal
                     isVisible={modalVisible}
                     onClose={closeModal}
-                    coupon={selectedCoupon}
+                    coupon={selectedCoupon} // 선택된 쿠폰이 없으면 null
                 />
             )}
         </View>
