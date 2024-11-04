@@ -6,6 +6,7 @@ import {
   Alert,
   StyleSheet,
   ActivityIndicator, // 로딩 인디케이터 추가
+  TouchableOpacity,
 } from 'react-native';
 import { firestore } from '../firebaseConfig'; // Firestore 설정 가져오기
 import { collection, getDocs, updateDoc, doc } from 'firebase/firestore'; // Firestore에서 데이터 가져오기 및 업데이트
@@ -24,7 +25,7 @@ const OrderManagement = () => {
   const [showDatePicker, setShowDatePicker] = useState(false); // 날짜 선택기 표시 상태
   const [isLoading, setIsLoading] = useState(true); // 로딩 상태
 
-  // 날짜 포맷팅 함수
+  // 날짜를 YYYYMMDD 형식으로 포맷팅하는 함수
   const formatDate = (date) => {
     const year = date.getFullYear().toString().slice(-2); // 연도
     const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 월
@@ -32,50 +33,58 @@ const OrderManagement = () => {
     return `${year}${month}${day}`; // YYYYMMDD 형식 반환
   };
 
-  // 주문 정보를 가져오는 함수
-  useEffect(() => {
-    const fetchOrders = async () => {
-      setIsLoading(true); // 데이터 로딩 시작
-      const dateString = formatDate(selectedDate); // 선택된 날짜 포맷팅
-      try {
-        const ordersSnapshot = await getDocs(
-          collection(firestore, 'orders', dateString, 'orders') // Firestore에서 주문 데이터 가져오기
-        );
-        const ordersData = ordersSnapshot.docs.map((doc) => ({
-          id: doc.id, // 주문 ID
-          ...doc.data(), // 주문 데이터
-        }));
+  // Firestore에서 주문 정보를 가져오는 함수
+  const fetchOrders = async () => {
+    setIsLoading(true); // 데이터 로딩 시작
+    const dateString = formatDate(selectedDate); // 선택된 날짜 포맷팅
+    try {
+      const ordersSnapshot = await getDocs(
+        collection(firestore, 'orders', dateString, 'orders') // Firestore에서 주문 데이터 가져오기
+      );
+      const ordersData = ordersSnapshot.docs.map((doc) => ({
+        id: doc.id, // 주문 ID
+        ...doc.data(), // 주문 데이터
+      }));
+      setOrders(processOrders(ordersData)); // 주문 처리 함수 호출로 필터링 및 정렬된 주문 목록 상태 업데이트
+    } catch (error) {
+      console.error('주문 정보를 가져오는 중 오류 발생:', error);
+      Alert.alert('오류', '주문 정보를 가져오는 중 오류가 발생했습니다.'); // 오류 알림
+    } finally {
+      setIsLoading(false); // 데이터 로딩 종료
+    }
+  };
 
-        // 필터링된 주문 목록 생성
-        const filteredOrders = ordersData.filter((order) => {
-          if (filter === '조리 전') {
-            return !order.isStarted && !order.isCompleted; // 조리 전인 주문
-          } else if (filter === '조리 시작') {
-            return order.isStarted && !order.isCompleted; // 조리 중인 주문
-          } else if (filter === '조리 완료') {
-            return order.isStarted && order.isCompleted; // 조리 완료된 주문
-          }
-          return true; // 기본적으로 모든 주문 반환
-        });
-
-        // 정렬된 주문 목록 생성
-        const sortedOrders = filteredOrders.sort((a, b) => {
-          const dateA = new Date(a.createdAt); // 주문 생성 날짜
-          const dateB = new Date(b.createdAt);
-          return sortOrder === '내림차순' ? dateB - dateA : dateA - dateB; // 정렬 순서에 따라 정렬
-        });
-
-        setOrders(sortedOrders); // 주문 목록 상태 업데이트
-      } catch (error) {
-        console.error('주문 정보를 가져오는 중 오류 발생:', error);
-        Alert.alert('오류', '주문 정보를 가져오는 중 오류가 발생했습니다.'); // 오류 알림
-      } finally {
-        setIsLoading(false); // 데이터 로딩 종료
+  // 주문 데이터 필터링 및 정렬 처리 함수
+  const processOrders = (ordersData) => {
+    // 필터링된 주문 목록 생성
+    const filteredOrders = ordersData.filter((order) => {
+      if (filter === '조리 전') {
+        return !order.isStarted && !order.isCompleted; // 조리 전인 주문
+      } else if (filter === '조리 시작') {
+        return order.isStarted && !order.isCompleted; // 조리 중인 주문
+      } else if (filter === '조리 완료') {
+        return order.isStarted && order.isCompleted; // 조리 완료된 주문
       }
-    };
+      return true; // 기본적으로 모든 주문 반환
+    });
 
+    // 정렬된 주문 목록 반환
+    return filteredOrders.sort((a, b) => {
+      const dateA = Date.parse(a.createdAt); // 문자열을 숫자로 변환
+      const dateB = Date.parse(b.createdAt);
+      return sortOrder === '내림차순' ? dateB - dateA : dateA - dateB; // 정렬 순서에 따라 정렬
+    });
+  };
+
+  // 필터, 정렬 순서, 선택된 날짜 변경 시 주문 데이터 가져오기
+  useEffect(() => {
     fetchOrders(); // 주문 데이터 가져오기 호출
-  }, [filter, sortOrder, selectedDate]); // 필터, 정렬 순서, 선택된 날짜가 변경될 때마다 호출
+  }, [filter, sortOrder, selectedDate]);
+
+  // 주문 목록을 다시 가져오는 함수
+  const refreshOrders = () => {
+    fetchOrders(); // 주문 데이터 다시 가져오기
+  };
 
   // 주문 상태 변경 핸들러
   const handleStatusChange = async (orderId, newStatus) => {
@@ -94,46 +103,14 @@ const OrderManagement = () => {
       'orders',
       orderId
     ); // Firestore에서 주문 참조 생성
-    let isStarted = false;
-    let isCompleted = false;
 
     // 주문 상태에 따라 플래그 설정
-    if (newStatus === '조리 시작') {
-      isStarted = true;
-    } else if (newStatus === '조리 완료') {
-      isStarted = true;
-      isCompleted = true;
-    }
+    let isStarted = newStatus !== '조리 전'; // 조리 시작 상태
+    let isCompleted = newStatus === '조리 완료'; // 조리 완료 상태
 
     try {
       await updateDoc(orderRef, { isStarted, isCompleted }); // 주문 상태 업데이트
-      const updatedOrdersSnapshot = await getDocs(
-        collection(firestore, 'orders', formatDate(selectedDate), 'orders') // 업데이트된 주문 데이터 가져오기
-      );
-      const updatedOrdersData = updatedOrdersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-
-      // 필터링 및 정렬된 주문 목록 생성
-      const filteredOrders = updatedOrdersData.filter((order) => {
-        if (filter === '조리 전') {
-          return !order.isStarted && !order.isCompleted;
-        } else if (filter === '조리 시작') {
-          return order.isStarted && !order.isCompleted;
-        } else if (filter === '조리 완료') {
-          return order.isStarted && order.isCompleted;
-        }
-        return true;
-      });
-
-      const sortedOrders = filteredOrders.sort((a, b) => {
-        const dateA = new Date(a.createdAt);
-        const dateB = new Date(b.createdAt);
-        return sortOrder === '내림차순' ? dateB - dateA : dateA - dateB;
-      });
-
-      setOrders(sortedOrders); // 주문 목록 상태 업데이트
+      fetchOrders(); // 업데이트된 주문 데이터 다시 가져오기
     } catch (error) {
       console.error('주문 상태 업데이트 중 오류 발생:', error);
       Alert.alert('오류', '주문 상태 업데이트 중 오류가 발생했습니다.'); // 오류 알림
@@ -141,34 +118,34 @@ const OrderManagement = () => {
   };
 
   // 주문 아이템 렌더링 함수
-  const renderItem = ({ item }) => {
-    return (
-      <View style={styles.orderItem}>
-        <Text>주문 ID: {item.id}</Text>
-        <View style={styles.pickerContainer}>
-          <Picker
-            selectedValue={
-              item.isCompleted
-                ? '조리 완료'
-                : item.isStarted
-                  ? '조리 시작'
-                  : '조리 전'
-            }
-            onValueChange={(itemValue) => handleStatusChange(item.id, itemValue)}
-          >
-            <Picker.Item label="조리 전" value="조리 전" />
-            <Picker.Item label="조리 시작" value="조리 시작" />
-            <Picker.Item label="조리 완료" value="조리 완료" />
-            <Picker.Item label="상세 보기" value="상세 보기" />
-          </Picker>
-        </View>
+  const renderItem = ({ item }) => (
+    <View style={styles.orderItem}>
+      <Text>주문 ID: {item.id}</Text>
+      <View style={styles.pickerContainer}>
+        <Picker
+          selectedValue={
+            item.isCompleted
+              ? '조리 완료'
+              : item.isStarted
+              ? '조리 시작'
+              : '조리 전'
+          }
+          onValueChange={
+            (itemValue) => handleStatusChange(item.id, itemValue) // 상태 변경 핸들러 호출
+          }
+        >
+          <Picker.Item label="조리 전" value="조리 전" />
+          <Picker.Item label="조리 시작" value="조리 시작" />
+          <Picker.Item label="조리 완료" value="조리 완료" />
+          <Picker.Item label="상세 보기" value="상세 보기" />
+        </Picker>
       </View>
-    );
-  };
+    </View>
+  );
 
   // 날짜 선택기 표시 함수
   const showDatePickerModal = () => {
-    setShowDatePicker(true);
+    setShowDatePicker(true); // 날짜 선택기 표시
   };
 
   // 날짜 선택 후 처리 함수
@@ -187,9 +164,9 @@ const OrderManagement = () => {
           {`${selectedDate.getFullYear()}년 ${(selectedDate.getMonth() + 1)
             .toString()
             .padStart(2, '0')}월 ${selectedDate
-              .getDate()
-              .toString()
-              .padStart(2, '0')}일`}
+            .getDate()
+            .toString()
+            .padStart(2, '0')}일`}
         </Text>
         <Icon
           name="calendar-outline"
@@ -230,6 +207,10 @@ const OrderManagement = () => {
             <Picker.Item label="오름차순" value="오름차순" />
           </Picker>
         </View>
+        {/* 새로고침 버튼*/}
+        <TouchableOpacity style={styles.refreshButton} onPress={refreshOrders}>
+          <Icon name="refresh-outline" size={20} color="#555" />
+        </TouchableOpacity>
       </View>
 
       {isLoading ? ( // 로딩 상태에 따라 표시
@@ -292,7 +273,7 @@ const styles = StyleSheet.create({
   },
   pickerContainer: {
     height: 52,
-    width: '48%', // 픽커 너비
+    width: '40%', // 픽커 너비
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#ced4da',
@@ -325,6 +306,17 @@ const styles = StyleSheet.create({
     color: '#999',
     textAlign: 'center',
     marginTop: '40%',
+  },
+  refreshButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#ffffff',
+    padding: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    marginLeft: 10, // 드롭다운과 간격
   },
 });
 
