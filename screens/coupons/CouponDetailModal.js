@@ -46,6 +46,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     // 추가 필드 상태
     const [canBeCombined, setCanBeCombined] = useState(coupon ? coupon.canBeCombined : true); // 기본값 true
     const [available, setAvailable] = useState(coupon ? coupon.available : true); // 기본값 true
+    const [isPublic, setIsPublic] = useState(coupon ? coupon.isPublic : true); // 기본값 true
 
     const [showStartDatePicker, setShowStartDatePicker] = useState(false);
     const [showEndDatePicker, setShowEndDatePicker] = useState(false);
@@ -140,6 +141,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                 minOrderValue: parseInt(minOrderValue),
                 maxDiscountValue: parseInt(maxDiscountValue),
                 canBeCombined: canBeCombined,
+                isPublic: isPublic,
                 available: available,
             });
             onClose(); // 추가 후 모달 닫기
@@ -164,6 +166,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                 minOrderValue: parseInt(minOrderValue),
                 maxDiscountValue: parseInt(maxDiscountValue),
                 canBeCombined: canBeCombined,
+                isPublic: isPublic,
                 available: available,
             });
             onClose(); // 수정 후 모달 닫기
@@ -361,6 +364,34 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                                 ]}
                             >
                                 <Text style={!canBeCombined ? styles.selectedRadio : styles.radio}>불가능</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+
+                    <View style={styles.rowContainer}>
+                        <Text style={styles.label}>쿠폰 공개 여부(비공개 시 코드 입력으로만 등록)</Text>
+                        <View style={styles.radioContainer}>
+                            <TouchableOpacity
+                                onPress={() => setIsPublic(true)}
+                                style={[
+                                    styles.radioButton,
+                                    isPublic && styles.activeRadio,
+                                    !isPublic && styles.inactiveRadio,
+                                    { flex: 0.3 }, // 너비를 동일하게 설정
+                                ]}
+                            >
+                                <Text style={isPublic ? styles.selectedRadio : styles.radio}>공개</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setIsPublic(false)}
+                                style={[
+                                    styles.radioButton,
+                                    !isPublic && styles.activeRadio,
+                                    isPublic && styles.inactiveRadio,
+                                    { flex: 0.3 }, // 너비를 동일하게 설정
+                                ]}
+                            >
+                                <Text style={!isPublic ? styles.selectedRadio : styles.radio}>비공개</Text>
                             </TouchableOpacity>
                         </View>
                     </View>
