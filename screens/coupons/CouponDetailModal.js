@@ -4,7 +4,6 @@ import {
   Text,
   TextInput,
   Button,
-  StyleSheet,
   Modal,
   TouchableOpacity,
   KeyboardAvoidingView,
@@ -182,6 +181,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         maxDiscountValue: parseInt(maxDiscountValue),
         canBeCombined: canBeCombined,
         isPublic: isPublic,
+        isUsed: true,
         available: available,
       });
       onClose(); // 추가 후 모달 닫기

@@ -117,8 +117,9 @@ const Statistics = () => {
   const getSortedData = () => {
     const menuData = getMenuSalesData(); // 메뉴별 매출 데이터 가져오기
     return menuData
-      .sort((a, b) =>
-        sortOption === 'salesCount' ? b.count - a.count : b.total - a.total // 정렬 옵션에 따라 정렬
+      .sort(
+        (a, b) =>
+          sortOption === 'salesCount' ? b.count - a.count : b.total - a.total // 정렬 옵션에 따라 정렬
       )
       .slice(0, 6); // 상위 6개 데이터 반환
   };
@@ -131,14 +132,23 @@ const Statistics = () => {
   // 차트 데이터 업데이트
   useEffect(() => {
     const sortedData = getSortedData(); // 정렬된 데이터 가져오기
-    const updatedChartData = sortedData.map((item, index) => ({
-      name: item.name,
-      population: sortOption === 'salesCount' ? parseInt(item.count) : parseInt(item.total), // 인구 수 결정
-      color: d3.schemeCategory10[index % 10], // D3 색상 팔레트 사용
-      legendFontColor: '#7F7F7F',
-      legendFontSize: 15,
-      label: `${item.name}: ${sortOption === 'salesCount' ? item.count : item.total.toLocaleString()} 원`, // 레이블 형식
-    }));
+    const updatedChartData = sortedData.map((item, index) => {
+      const displayedName =
+        item.name.length > 6 ? item.name.slice(0, 6) + '...' : item.name; // 이름 처리
+      return {
+        name: displayedName, // 수정된 이름
+        population:
+          sortOption === 'salesCount'
+            ? parseInt(item.count)
+            : parseInt(item.total), // 인구 수 결정
+        color: d3.schemeCategory10[index % 10], // D3 색상 팔레트 사용
+        legendFontColor: '#7F7F7F',
+        legendFontSize: 15,
+        label: `${displayedName}: ${
+          sortOption === 'salesCount' ? item.count : item.total.toLocaleString()
+        } 원`, // 레이블 형식
+      };
+    });
 
     setChartData(updatedChartData); // 차트 데이터 상태 업데이트
   }, [sortOption, ordersList]);
@@ -148,7 +158,12 @@ const Statistics = () => {
       <View style={styles.header}>
         <Text onPress={() => setShowDatePicker(true)} style={styles.dateText}>
           선택된 날짜:{' '}
-          {`${selectedDate.getFullYear()}년 ${(selectedDate.getMonth() + 1).toString().padStart(2, '0')}월 ${selectedDate.getDate().toString().padStart(2, '0')}일`}
+          {`${selectedDate.getFullYear()}년 ${(selectedDate.getMonth() + 1)
+            .toString()
+            .padStart(2, '0')}월 ${selectedDate
+            .getDate()
+            .toString()
+            .padStart(2, '0')}일`}
         </Text>
         <Icon
           name="calendar-outline"
@@ -192,7 +207,7 @@ const Statistics = () => {
               <PieChart
                 data={chartData}
                 width={screenWidth}
-                height={220}
+                height={200}
                 chartConfig={{
                   backgroundColor: '#fff',
                   backgroundGradientFrom: '#fff',
@@ -206,18 +221,22 @@ const Statistics = () => {
                 }}
                 accessor="population" // 데이터에서 접근할 키
                 backgroundColor="transparent"
-                paddingLeft="15"
-                center={[10, 0]} // 차트 중앙 위치 조정
+                center={[-5, 0]} // 차트 중앙 위치 조정
               />
 
               <View style={styles.orderList}>
-                {getSortedData().map(item => ( // 정렬된 데이터 목록 표시
-                  <View key={item.name} style={styles.orderItem}>
-                    <Text>
-                      {item.name}: {item.count}건 / {item.total.toLocaleString()} 원
-                    </Text>
-                  </View>
-                ))}
+                {getSortedData().map(
+                  (
+                    item // 정렬된 데이터 목록 표시
+                  ) => (
+                    <View key={item.name} style={styles.orderItem}>
+                      <Text>
+                        {item.name}: {item.count}건 /{' '}
+                        {item.total.toLocaleString()} 원
+                      </Text>
+                    </View>
+                  )
+                )}
               </View>
             </>
           )}
