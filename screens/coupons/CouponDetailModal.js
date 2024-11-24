@@ -101,9 +101,9 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     if (!discountValue) {
       newErrors.discountValue = '할인 값을 입력해야 합니다.';
     } else if (discountType === '원' && parseInt(discountValue) > 50000) {
-      newErrors.discountValue = '할인 값은 5만원을 넘길 수 없습니다.';
+      newErrors.discountValue = '할인 값(원)은 5만원을 넘길 수 없습니다.';
     } else if (discountType === '%' && parseInt(discountValue) > 50) {
-      newErrors.discountValue = '할인 값은 50을 넘길 수 없습니다.';
+      newErrors.discountValue = '할인 값(%)은 50을 넘길 수 없습니다.';
     }
 
     // 최소 주문 금액 체크
@@ -364,11 +364,15 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
               {errors.maxDiscountValue || '최대 할인 금액'}
             </Text>
             <TextInput
-              style={styles.input}
-              placeholder="금액 입력"
+              style={[
+                styles.input,
+                discountType === '원' ? styles.disabledInput : null,
+              ]}
+              placeholder={discountType === '원' ? '' : '금액 입력'}
               keyboardType="numeric"
               value={maxDiscountValue}
               onChangeText={setMaxDiscountValue}
+              editable={discountType === '%'} // 활성화/비활성화 처리
             />
 
             <Text style={errors.dateRange ? styles.errorLabel : styles.label}>
