@@ -9,7 +9,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { firestore } from '../firebaseConfig'; // Firestore 설정 가져오기
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore'; // Firestore에서 데이터 가져오기 및 업데이트
+import {
+  collection,
+  getDocs,
+  updateDoc,
+  doc,
+  onSnapshot,
+} from 'firebase/firestore'; // Firestore에서 데이터 가져오기 및 업데이트
 import { Picker } from '@react-native-picker/picker'; // 선택기 컴포넌트
 import DateTimePicker from '@react-native-community/datetimepicker'; // 날짜 선택기 컴포넌트
 import OrderDetailModal from '../components/OrderDetailModal'; // 주문 상세보기 모달 컴포넌트
@@ -33,25 +39,31 @@ const OrderManagement = () => {
     return `${year}${month}${day}`; // YYYYMMDD 형식 반환
   };
 
-  // Firestore에서 주문 정보를 가져오는 함수
-  const fetchOrders = async () => {
-    setIsLoading(true); // 데이터 로딩 시작
-    const dateString = formatDate(selectedDate); // 선택된 날짜 포맷팅
-    try {
-      const ordersSnapshot = await getDocs(
-        collection(firestore, 'orders', dateString, 'orders') // Firestore에서 주문 데이터 가져오기
-      );
-      const ordersData = ordersSnapshot.docs.map((doc) => ({
-        id: doc.id, // 주문 ID
-        ...doc.data(), // 주문 데이터
-      }));
-      setOrders(processOrders(ordersData)); // 주문 처리 함수 호출로 필터링 및 정렬된 주문 목록 상태 업데이트
-    } catch (error) {
-      console.error('주문 정보를 가져오는 중 오류 발생:', error);
-      Alert.alert('오류', '주문 정보를 가져오는 중 오류가 발생했습니다.'); // 오류 알림
-    } finally {
-      setIsLoading(false); // 데이터 로딩 종료
-    }
+  // Firestore에서 실시간 주문 정보 가져오기
+  const fetchOrders = () => {
+    setIsLoading(true);
+    const dateString = formatDate(selectedDate);
+    const ordersRef = collection(firestore, 'orders', dateString, 'orders');
+
+    const unsubscribe = onSnapshot(
+      ordersRef,
+      (snapshot) => {
+        const ordersData = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setOrders(processOrders(ordersData));
+        setIsLoading(false);
+      },
+      (error) => {
+        console.error('주문 정보를 가져오는 중 오류 발생:', error);
+        Alert.alert('오류', '주문 정보를 가져오는 중 오류가 발생했습니다.');
+        setIsLoading(false);
+      }
+    );
+
+    // 컴포넌트 언마운트 시 리스너 해제
+    return () => unsubscribe();
   };
 
   // 주문 데이터 필터링 및 정렬 처리 함수
@@ -78,7 +90,8 @@ const OrderManagement = () => {
 
   // 필터, 정렬 순서, 선택된 날짜 변경 시 주문 데이터 가져오기
   useEffect(() => {
-    fetchOrders(); // 주문 데이터 가져오기 호출
+    const unsubscribe = fetchOrders();
+    return () => unsubscribe(); // 언마운트 시 리스너 해제
   }, [filter, sortOrder, selectedDate]);
 
   // 주문 목록을 다시 가져오는 함수
