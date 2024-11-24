@@ -114,7 +114,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     }
 
     // 최대 할인 금액 체크
-    if (!maxDiscountValue) {
+    if (discountType === '%' && !maxDiscountValue) {
       newErrors.maxDiscountValue = '최대 할인 금액을 입력해야 합니다.';
     } else if (parseInt(maxDiscountValue) > 50000) {
       newErrors.maxDiscountValue = '최대 할인 금액은 5만원을 넘길 수 없습니다.';
@@ -178,7 +178,8 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         discountType: discountType,
         discountValue: parseInt(discountValue),
         minOrderValue: parseInt(minOrderValue),
-        maxDiscountValue: parseInt(maxDiscountValue),
+        maxDiscountValue:
+          discountType === '원' ? -1 : parseInt(maxDiscountValue),
         canBeCombined: canBeCombined,
         isPublic: isPublic,
         isUsed: true,
@@ -210,9 +211,11 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
         )
           .toString()
           .padStart(2, '0')}${endDate.getDate().toString().padStart(2, '0')}`,
+        discountType: discountType,
         discountValue: parseInt(discountValue),
         minOrderValue: parseInt(minOrderValue),
-        maxDiscountValue: parseInt(maxDiscountValue),
+        maxDiscountValue:
+          discountType === '원' ? -1 : parseInt(maxDiscountValue),
         canBeCombined: canBeCombined,
         isPublic: isPublic,
         available: available,
@@ -251,6 +254,14 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
 
     // 작업이 성공적으로 완료된 경우 모달 닫기
     onClose();
+  };
+
+  // 할인 타입 변경 시 반영, 타입이 '원'이면 최대 할인 금액 초기화
+  const handleDiscountTypeChange = (type) => {
+    setDiscountType(type);
+    if (type === '원') {
+      setMaxDiscountValue(''); // maxDiscountValue 초기화
+    }
   };
 
   return (
@@ -307,7 +318,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
               />
               <View style={styles.discountTypeButtonContainer}>
                 <TouchableOpacity
-                  onPress={() => setDiscountType('원')}
+                  onPress={() => handleDiscountTypeChange('원')}
                   style={[
                     styles.radioButton,
                     discountType !== '원' && styles.inactiveRadio,
@@ -326,7 +337,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  onPress={() => setDiscountType('%')}
+                  onPress={() => handleDiscountTypeChange('%')}
                   style={[
                     styles.radioButton,
                     discountType !== '%' && styles.inactiveRadio,
@@ -370,7 +381,7 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
               ]}
               placeholder={discountType === '원' ? '' : '금액 입력'}
               keyboardType="numeric"
-              value={maxDiscountValue}
+              value={maxDiscountValue !== '-1' ? maxDiscountValue : ''}
               onChangeText={setMaxDiscountValue}
               editable={discountType === '%'} // 활성화/비활성화 처리
             />
