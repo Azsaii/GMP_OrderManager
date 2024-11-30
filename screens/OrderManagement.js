@@ -121,12 +121,17 @@ const OrderManagement = () => {
     let isStarted = newStatus !== '조리 전'; // 조리 시작 상태
     let isCompleted = newStatus === '조리 완료'; // 조리 완료 상태
 
+    // 로딩 상태 설정
+    setIsLoading(true);
+
     try {
       await updateDoc(orderRef, { isStarted, isCompleted }); // 주문 상태 업데이트
       fetchOrders(); // 업데이트된 주문 데이터 다시 가져오기
     } catch (error) {
       console.error('주문 상태 업데이트 중 오류 발생:', error);
       Alert.alert('오류', '주문 상태 업데이트 중 오류가 발생했습니다.'); // 오류 알림
+    } finally {
+      setIsLoading(false); // 로딩 상태 해제
     }
   };
 
@@ -198,7 +203,7 @@ const OrderManagement = () => {
       </View>
 
       <View style={styles.filters}>
-        <View style={styles.pickerContainer}>
+        <View style={styles.headPickerContainer}>
           <Picker
             selectedValue={filter} // 현재 필터 상태
             style={styles.picker}
@@ -210,7 +215,7 @@ const OrderManagement = () => {
           </Picker>
         </View>
 
-        <View style={styles.pickerContainer}>
+        <View style={styles.headPickerContainer}>
           <Picker
             selectedValue={sortOrder} // 현재 정렬 순서 상태
             style={styles.picker}
@@ -284,9 +289,19 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     alignSelf: 'center', // 아이콘 세로 중앙 정렬
   },
-  pickerContainer: {
+  headPickerContainer: {
     height: 52,
     width: '40%', // 픽커 너비
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#ced4da',
+    borderRadius: 8,
+    marginHorizontal: 5,
+    overflow: 'hidden',
+  },
+  pickerContainer: {
+    height: 52,
+    width: '50%', // 픽커 너비
     backgroundColor: '#ffffff',
     borderWidth: 1,
     borderColor: '#ced4da',
