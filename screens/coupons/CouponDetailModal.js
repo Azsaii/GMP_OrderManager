@@ -92,9 +92,14 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
     // 쿠폰 이름 및 설명 체크
     if (couponName.length > 20) {
       newErrors.couponName = '쿠폰 이름은 20자를 초과할 수 없습니다.';
+    } else if (couponName.length < 5) {
+      newErrors.couponName = '쿠폰 이름을 5자 이상으로 작성해주세요.';
     }
+
     if (couponDescription.length > 100) {
       newErrors.couponDescription = '쿠폰 설명은 100자를 초과할 수 없습니다.';
+    } else if (couponDescription.length < 5) {
+      newErrors.couponDescription = '쿠폰 설명을 5자 이상으로 작성해주세요.';
     }
 
     // 할인 값 체크
