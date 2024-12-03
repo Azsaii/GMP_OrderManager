@@ -1,13 +1,15 @@
-# GMP_OrderManager
+# 카페 관리자 앱
 
-관리자 앱
+고급모바일프로그래밍 N반 11팀 프로젝트입니다.
 
-####플랫폼
+#### 플랫폼
 - React Native Expo
 - Firebase
 
-####실행 방법
+#### 실행 방법
 ```
 npm install
+```
+```
 npm start
 ```
