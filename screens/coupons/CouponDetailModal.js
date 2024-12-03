@@ -314,7 +314,21 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
                 placeholder="할인 값 설정"
                 keyboardType="numeric"
                 value={discountValue}
-                onChangeText={setDiscountValue}
+                onChangeText={(text) => {
+                  if (/^\d*$/.test(text)) {
+                    setDiscountValue(text);
+                    setErrors((prevErrors) => ({
+                      ...prevErrors,
+                      discountValue: '',
+                    }));
+                  } else {
+                    setDiscountValue(''); // 입력값 초기화
+                    setErrors((prevErrors) => ({
+                      ...prevErrors,
+                      discountValue: '숫자만 입력 가능합니다', // 에러 메시지 설정
+                    }));
+                  }
+                }}
               />
               <View style={styles.discountTypeButtonContainer}>
                 <TouchableOpacity
@@ -366,7 +380,21 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
               placeholder="금액 입력"
               keyboardType="numeric"
               value={minOrderValue}
-              onChangeText={setMinOrderValue}
+              onChangeText={(text) => {
+                if (/^\d*$/.test(text)) {
+                  setMinOrderValue(text);
+                  setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    minOrderValue: '', // 에러 메시지 초기화
+                  }));
+                } else {
+                  setMinOrderValue(''); // 입력값 초기화
+                  setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    minOrderValue: '숫자만 입력 가능합니다', // 에러 메시지 설정
+                  }));
+                }
+              }}
             />
 
             <Text
@@ -382,8 +410,22 @@ const CouponDetailModal = ({ isVisible, onClose, coupon }) => {
               placeholder={discountType === '원' ? '' : '금액 입력'}
               keyboardType="numeric"
               value={maxDiscountValue !== '-1' ? maxDiscountValue : ''}
-              onChangeText={setMaxDiscountValue}
               editable={discountType === '%'} // 활성화/비활성화 처리
+              onChangeText={(text) => {
+                if (discountType === '%' && /^\d*$/.test(text)) {
+                  setMaxDiscountValue(text);
+                  setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    maxDiscountValue: '', // 에러 메시지 초기화
+                  }));
+                } else if (discountType === '%') {
+                  setMaxDiscountValue(''); // 입력값 초기화
+                  setErrors((prevErrors) => ({
+                    ...prevErrors,
+                    maxDiscountValue: '숫자만 입력 가능합니다', // 에러 메시지 설정
+                  }));
+                }
+              }}
             />
 
             <Text style={errors.dateRange ? styles.errorLabel : styles.label}>
